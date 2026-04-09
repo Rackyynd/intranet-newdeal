@@ -27,7 +27,7 @@ jobs:
   # JOB 2 : Déploiement
   deploy:
     needs: security-check
-    runs-on: runner_prod # Le nom du runner demandé dans l'énoncé
+    runs-on: ubuntu-latest # Le nom du runner demandé dans l'énoncé
     steps:
       - name: Pull and Run Container
         run: |
