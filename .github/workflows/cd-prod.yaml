@@ -1,0 +1,10 @@
+name: CD Pipeline Prod
+on:
+  push:
+    branches: [ prod ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Déploiement en cours sur le serveur de prod..."
