@@ -1,0 +1,45 @@
+name: CD Pipeline Prod
+
+on:
+  push:
+    branches:
+      - prod # Déclenchement uniquement sur la branche prod
+
+env:
+  IMAGE_NAME: intranet-newdeal
+  DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+  # JOB 1 : Scan de sécurité avant déploiement
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan Code for Secrets
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs' # Scan du système de fichiers
+          severity: 'CRITICAL'
+          exit-code: '1'
+
+  # JOB 2 : Déploiement
+  deploy:
+    needs: security-check
+    runs-on: runner_prod # Le nom du runner demandé dans l'énoncé
+    steps:
+      - name: Pull and Run Container
+        run: |
+          # Se connecter au Docker Hub
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          
+          # Récupérer l'image
+          docker pull ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+          
+          # Arrêter l'ancien conteneur s'il existe
+          docker stop intranet-prod || true
+          docker rm intranet-prod || true
+          
+          # Lancer le nouveau conteneur sur le port 80
+          docker run -d --name intranet-prod -p 80:80 ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:dev
